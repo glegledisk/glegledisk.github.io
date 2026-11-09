@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>不均一MoE 研究成果ビジュアル解説 — AI の「専門家チーム」に大小を混ぜたら得だったのか</title>
+<style>
+:root{
+  --bg:#0a0f1e; --bg2:#0e1528; --panel:#141d33; --panel2:#18233d;
+  --line:#273553; --line2:#34446b;
+  --ink:#eef3ff; --muted:#9caac9; --faint:#6f7f9f;
+  --cyan:#4fd1c5; --blue:#60a5fa; --violet:#a78bfa;
+  --rose:#f4728b; --amber:#f5b544; --green:#86efac;
+  --radius:16px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+  line-height:1.85; font-size:16px;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(800px 500px at 12% -5%, rgba(96,165,250,.13), transparent 70%),
+    radial-gradient(700px 500px at 88% 8%, rgba(167,139,250,.11), transparent 70%),
+    radial-gradient(900px 600px at 50% 105%, rgba(79,209,197,.07), transparent 70%);
+}
+.wrap{position:relative; z-index:1; max-width:1080px; margin:0 auto; padding:0 24px 100px}
+.mono{font-family:ui-monospace,"SFMono-Regular",Consolas,monospace; font-variant-numeric:tabular-nums}
+
+/* progress + nav */
+#progress{position:fixed; top:0; left:0; height:3px; width:0; z-index:50;
+  background:linear-gradient(90deg,var(--cyan),var(--blue),var(--violet)); transition:width .1s linear}
+nav{position:sticky; top:0; z-index:40; backdrop-filter:blur(14px);
+  background:rgba(10,15,30,.86); border-bottom:1px solid var(--line); margin-bottom:0}
+nav .inner{max-width:1080px; margin:0 auto; padding:10px 24px; display:flex; align-items:center; gap:14px}
+nav .brand{font-weight:700; font-size:13px; letter-spacing:.04em; color:var(--muted); white-space:nowrap}
+nav .brand b{color:var(--cyan)}
+nav .links{display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; margin-left:auto}
+nav .links::-webkit-scrollbar{display:none}
+nav a{color:var(--muted); text-decoration:none; font-size:12.5px; padding:5px 10px; border-radius:999px; white-space:nowrap; transition:.2s}
+nav a:hover,nav a.on{color:var(--ink); background:var(--panel2)}
+
+/* hero */
+header.hero{padding:76px 0 48px; border-bottom:1px solid var(--line)}
+.eyebrow{display:inline-flex; align-items:center; gap:9px; font-size:12px; letter-spacing:.12em;
+  color:var(--cyan); border:1px solid rgba(79,209,197,.35); background:rgba(79,209,197,.07);
+  padding:6px 14px; border-radius:999px; font-weight:700}
+h1{font-size:clamp(29px,4.6vw,48px); line-height:1.35; margin:24px 0 20px; letter-spacing:-.02em; font-weight:800}
+h1 em{font-style:normal; color:var(--cyan)}
+.lead{font-size:clamp(16px,1.9vw,20px); color:#cdd8f0; max-width:820px; margin:0 0 12px}
+.lead strong{color:var(--amber)}
+.sub{color:var(--muted); font-size:14.5px; max-width:820px}
+.chips{display:flex; flex-wrap:wrap; gap:10px; margin-top:32px}
+.chip{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:11px 16px; min-width:150px}
+.chip .k{display:block; font-size:11px; color:var(--faint); letter-spacing:.06em}
+.chip .v{display:block; font-size:18px; font-weight:800; margin-top:2px}
+.chip.a .v{color:var(--cyan)} .chip.b .v{color:var(--amber)} .chip.c .v{color:var(--violet)} .chip.d .v{color:var(--rose)}
+.notice{margin-top:26px; padding:14px 18px; border-left:3px solid var(--line2); background:rgba(255,255,255,.025);
+  color:var(--muted); font-size:13.5px; border-radius:0 10px 10px 0}
+
+/* sections */
+section{padding:64px 0 8px; scroll-margin-top:70px}
+.sec-head{display:flex; align-items:flex-start; gap:16px; margin-bottom:26px}
+.sec-no{flex:0 0 auto; width:42px; height:42px; border-radius:12px; display:grid; place-items:center;
+  background:var(--panel2); border:1px solid var(--line2); color:var(--cyan); font-weight:800; font-size:14px}
+h2{font-size:clamp(22px,3vw,31px); line-height:1.4; margin:2px 0 6px; font-weight:800; letter-spacing:-.01em}
+.sec-sub{color:var(--muted); font-size:14.5px; margin:0}
+h3{font-size:18px; margin:0 0 10px; font-weight:750}
+p{margin:0 0 14px}
+.grid{display:grid; gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.card{background:linear-gradient(160deg,var(--panel),var(--bg2)); border:1px solid var(--line);
+  border-radius:var(--radius); padding:22px}
+.card p:last-child{margin-bottom:0}
+.card .tag{display:inline-block; font-size:11px; font-weight:800; letter-spacing:.06em; padding:3px 10px;
+  border-radius:999px; margin-bottom:12px}
+.tag.cy{color:var(--cyan); background:rgba(79,209,197,.12); border:1px solid rgba(79,209,197,.3)}
+.tag.am{color:var(--amber); background:rgba(245,181,68,.12); border:1px solid rgba(245,181,68,.3)}
+.tag.ro{color:var(--rose); background:rgba(244,114,139,.12); border:1px solid rgba(244,114,139,.3)}
+.tag.vi{color:var(--violet); background:rgba(167,139,250,.12); border:1px solid rgba(167,139,250,.3)}
+.tag.bl{color:var(--blue); background:rgba(96,165,250,.12); border:1px solid rgba(96,165,250,.3)}
+.tag.gr{color:var(--green); background:rgba(134,239,172,.12); border:1px solid rgba(134,239,172,.3)}
+.muted{color:var(--muted)} .small{font-size:13.5px} .tiny{font-size:12px; color:var(--faint)}
+.big{font-size:clamp(26px,4vw,40px); font-weight:850; letter-spacing:-.02em; line-height:1.2}
+.num{color:var(--cyan)} .numA{color:var(--amber)} .numR{color:var(--rose)} .numV{color:var(--violet)}
+.hl{background:linear-gradient(transparent 62%,rgba(245,181,68,.28) 62%); font-weight:700; color:#ffe6ad}
+.takeaway{margin:22px 0 0; padding:18px 22px; border-radius:14px;
+  background:linear-gradient(100deg,rgba(79,209,197,.10),rgba(96,165,250,.06));
+  border:1px solid rgba(79,209,197,.28); font-size:16px; font-weight:650}
+.takeaway b{color:var(--cyan)}
+.callout{margin-top:18px; padding:16px 20px; border:1px dashed var(--line2); border-radius:12px;
+  color:var(--muted); font-size:14px; background:rgba(255,255,255,.02)}
+.callout b{color:var(--ink)}
+
+/* figure shell */
+figure{margin:0 0 18px; background:var(--bg2); border:1px solid var(--line); border-radius:var(--radius); padding:18px}
+figure svg{display:block; width:100%; height:auto}
+figcaption{font-size:12.5px; color:var(--faint); margin-top:12px; line-height:1.7}
+.fig-title{font-size:13px; font-weight:750; color:var(--muted); margin-bottom:12px; letter-spacing:.03em}
+
+/* bars */
+.barrow{display:grid; grid-template-columns:150px 1fr 92px; gap:12px; align-items:center; margin:11px 0; font-size:13.5px}
+.track{height:22px; background:rgba(255,255,255,.045); border-radius:6px; overflow:hidden}
+.fill{height:100%; border-radius:6px; display:block}
+.barval{text-align:right; font-weight:750}
+.stack{display:flex; height:46px; border-radius:10px; overflow:hidden; border:1px solid var(--line2); margin:14px 0 8px}
+.stack div{display:grid; place-items:center; font-size:12.5px; font-weight:750; color:#0a0f1e}
+.legend{display:flex; flex-wrap:wrap; gap:16px; font-size:12.5px; color:var(--muted); margin-top:8px}
+.legend i{display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:6px; vertical-align:-1px}
+
+/* pills / tables */
+.pill{display:inline-block; font-size:11.5px; font-weight:750; padding:3px 10px; border-radius:999px;
+  border:1px solid var(--line2); color:var(--muted); background:var(--panel)}
+table{width:100%; border-collapse:collapse; font-size:13.5px; margin-top:10px}
+th,td{text-align:left; padding:9px 10px; border-bottom:1px solid var(--line)}
+th{color:var(--faint); font-size:11.5px; letter-spacing:.05em; font-weight:700}
+td.mono{color:#cdd8f0}
+
+/* term tooltip */
+.term{border-bottom:1px dotted var(--cyan); cursor:help; position:relative; color:#dbe7ff}
+.term::after{content:attr(data-tip); position:absolute; left:0; bottom:calc(100% + 9px); width:270px;
+  background:#1d2a48; color:var(--ink); border:1px solid var(--line2); border-radius:10px;
+  padding:10px 12px; font-size:12.5px; line-height:1.7; font-weight:400; white-space:normal;
+  opacity:0; visibility:hidden; transform:translateY(4px); transition:.16s; z-index:20; box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.term:hover::after,.term:focus-visible::after{opacity:1; visibility:visible; transform:none}
+
+/* connection map */
+.maptools{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:14px}
+button.btn{cursor:pointer; font:inherit; font-size:13px; font-weight:700; color:var(--ink);
+  background:var(--panel2); border:1px solid var(--line2); border-radius:999px; padding:8px 18px; transition:.2s}
+button.btn:hover{border-color:var(--cyan); color:var(--cyan)}
+button.btn.primary{background:linear-gradient(100deg,rgba(79,209,197,.2),rgba(96,165,250,.18)); border-color:rgba(79,209,197,.55)}
+button.btn.on{color:#0a0f1e; background:var(--cyan); border-color:var(--cyan)}
+#map .island{cursor:default; transition:opacity .25s, filter .25s}
+#map .island rect{transition:stroke-width .25s, fill .25s}
+#map .island.dim{opacity:.28}
+#map .island.lit rect{stroke-width:2.5; filter:drop-shadow(0 0 10px currentColor)}
+#map .island text{pointer-events:none}
+#map .qgroup{cursor:pointer}
+#map .chord{fill:none; stroke:#3a4666; stroke-width:2; stroke-dasharray:6 9; transition:stroke .25s,stroke-width .25s,stroke-dasharray .25s,filter .25s}
+#map .qdot{fill:#111a30; stroke:#3a4666; stroke-width:1.5; transition:.25s}
+#map .qmark{fill:#8b9ab9; font-size:14px; font-weight:800; text-anchor:middle; dominant-baseline:central; transition:.25s}
+#map .qname{fill:#0a0f1e; font-size:11px; font-weight:850; text-anchor:middle; dominant-baseline:central; display:none}
+#map .qgroup.active .chord{stroke:var(--c); stroke-width:3.2; stroke-dasharray:none; filter:drop-shadow(0 0 7px var(--c))}
+#map .qgroup.active .qdot{fill:var(--c); stroke:var(--c)}
+#map .qgroup.active .qmark{display:none}
+#map .qgroup.active .qname{display:block}
+.qcard{cursor:pointer; transition:.22s; position:relative; overflow:hidden}
+.qcard:hover,.qcard.active{border-color:var(--qc); transform:translateY(-3px); box-shadow:0 14px 34px rgba(0,0,0,.35)}
+.qcard::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--qc); opacity:.55}
+.qcard h3{display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+.qid{font-size:11px; font-weight:850; color:var(--qc); border:1px solid var(--qc); border-radius:6px; padding:1px 8px}
+.qpri{font-size:10.5px; font-weight:800; padding:2px 9px; border-radius:999px; color:#0a0f1e; background:var(--qc)}
+.qcard .qlead{font-size:15px; font-weight:700; margin:2px 0 10px}
+.qcard .qmeta{font-size:13px; color:var(--muted); margin:0}
+.qcard .qmeta b{color:var(--ink)}
+.qcard .islands{display:flex; flex-wrap:wrap; gap:6px; margin-top:12px}
+.qcard .islands span{font-size:11px; color:var(--faint); border:1px solid var(--line); border-radius:999px; padding:2px 9px}
+
+/* glossary */
+details.gl{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 16px}
+details.gl summary{cursor:pointer; font-weight:700; font-size:14px; color:var(--cyan); list-style:none}
+details.gl summary::-webkit-details-marker{display:none}
+details.gl summary::before{content:"+"; display:inline-block; width:18px; color:var(--muted)}
+details.gl[open] summary::before{content:"−"}
+details.gl p{margin:10px 0 0; font-size:13.5px; color:var(--muted)}
+
+footer{margin-top:70px; padding-top:28px; border-top:1px solid var(--line); color:var(--faint); font-size:12.5px}
+footer b{color:var(--muted)}
+footer ul{columns:2; column-gap:32px; padding-left:18px; margin:10px 0 0}
+footer li{break-inside:avoid; margin-bottom:4px}
+@media(max-width:720px){
+  .wrap{padding:0 16px 70px} nav .inner{padding:9px 16px} nav .brand{display:none}
+  .barrow{grid-template-columns:105px 1fr 74px; font-size:12px}
+  footer ul{columns:1} .term::after{width:220px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important} html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<nav>
+  <div class="inner">
+    <div class="brand"><b>∑</b> 不均一MoE ／ ビジュアル解説</div>
+    <div class="links" id="navlinks">
+      <a href="#s1">01 そもそも</a>
+      <a href="#s2">02 二つの方向</a>
+      <a href="#s3">03 三つの壁</a>
+      <a href="#s4">04 幅の謎</a>
+      <a href="#s5">05 計算量</a>
+      <a href="#s6">06 情報の渡し方</a>
+      <a href="#s7">07 測定の教訓</a>
+      <a href="#s8">08 未決着</a>
+      <a href="#s9">09 残る6つの問い</a>
+      <a href="#s10">10 持ち帰り</a>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">研究成果を、AI チャットを使う人のために</span>
+  <h1>AI の「専門家チーム」に、<br><em>大きい子と小さい子</em>を混ぜたら得だったのか</h1>
+  <p class="lead">直感は「得」。難しい文章には大きな頭脳、簡単な文章には小さな頭脳を割り当てれば速くなるはずです。<br>測ってみた答えは、<strong>「思った場所には、ほぼ効かなかった」</strong>でした。そして、その「ほぼ」が今も決着していません。</p>
+  <p class="sub">このページは、2026年10月〜11月に行われた一連の実験を、専門用語をできるだけ使わずに図で辿る解説です。最後に、<strong style="color:var(--violet)">「解けるとプロジェクト全体が一気に繋がる6つの未解決の問い」</strong>を紹介します。</p>
+  <div class="chips">
+    <div class="chip a"><span class="k">テストベッド</span><span class="v">合成課題・6 epoch</span></div>
+    <div class="chip b"><span class="k">中心命題の直接検定</span><span class="v">4 回すべて n.s.</span></div>
+    <div class="chip c"><span class="k">現役の実験</span><span class="v">0（保留のみ）</span></div>
+    <div class="chip d"><span class="k">残る問い</span><span class="v">6 つのハブ</span></div>
+  </div>
+  <p class="notice"><b>読み方</b>　下線付きのことばにカーソルを合わせると簡単な説明が出ます（末尾に辞典もあります）。数値はすべて既存の報告書からの引用で、<b>このページのための新規測定は 1 本もしていません</b>。</p>
+</header>
+
+<!-- ============ 01 ============ -->
+<section id="s1">
+  <div class="sec-head"><div class="sec-no">01</div><div>
+    <h2>そもそも「MoE」って何だったのか</h2>
+    <p class="sec-sub">まず、チャット AI の中身のたとえ話から。</p>
+  </div></div>
+
+  <div class="grid g2">
+    <div class="card">
+      <span class="tag bl">たとえ</span>
+      <h3>一人の万能医師ではなく、受付＋専門医チーム</h3>
+      <p>最近の AI は、ひとつの巨大な計算ブロックに全部やらせるのではなく、<span class="term" data-tip="expert（エキスパート）：実際に計算をする小さなネットワーク。AI の内部に何個も並んでいる。「専門医」に相当します。">expert</span>と呼ばれる小さな計算担当をたくさん用意し、<span class="term" data-tip="ルータ：入力された文字を見て、どの expert に渡すかを決める振り分け役。病院の受付係に相当します。">ルータ</span>が「この文字は誰に渡すか」を決める方式を使います。これが <b>MoE（Mixture of Experts）</b>です。</p>
+      <p>全部の専門医を毎回呼ばないので、<b>模型は大きいのに計算は軽い</b>、という美味しいところ取りができます。</p>
+      <p class="muted small">「不均一 MoE（HMoE）」は、その専門医の<span class="term" data-tip="幅（width）：expert の内側の太さ。数が大きいほど一度に扱える情報量が多く、パラメータ数も増えます。このプロジェクトでは 32〜224 の幅を使いました。">幅</span>をわざとバラバラにする案です。小さい専門医（幅32）から大きい専門医（幅224）までを混ぜます。</p>
+    </div>
+    <figure>
+      <div class="fig-title">図1　入力 → ルータ → 大小さまざまな expert → 出力</div>
+      <svg viewBox="0 0 900 340" role="img" aria-label="ルータが8個の大きさの違うexpertへ入力を振り分ける模式図">
+        <defs>
+          <linearGradient id="gExpert" x1="0" x2="1"><stop offset="0" stop-color="#4fd1c5"/><stop offset="1" stop-color="#60a5fa"/></linearGradient>
+          <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="#5c6f99"/></marker>
+        </defs>
+        <text x="18" y="30" fill="#6f7f9f" font-size="12">入力（文章を「トークン」という小さな塊に分けたもの）</text>
+        <g font-size="12.5" fill="#eef3ff">
+          <rect x="18" y="46" width="150" height="34" rx="9" fill="#1c2947" stroke="#34446b"/><text x="32" y="68">むずかしい語</text>
+          <rect x="18" y="92" width="150" height="34" rx="9" fill="#1c2947" stroke="#34446b"/><text x="32" y="114">ふつうの語</text>
+          <rect x="18" y="138" width="150" height="34" rx="9" fill="#1c2947" stroke="#34446b"/><text x="32" y="160">記号・区切り</text>
+          <rect x="18" y="184" width="150" height="34" rx="9" fill="#1c2947" stroke="#34446b"/><text x="32" y="206">繰り返し部分</text>
+        </g>
+        <g stroke="#5c6f99" stroke-width="1.6" fill="none" marker-end="url(#ar)">
+          <path d="M170 63 C220 63 220 145 268 145"/><path d="M170 109 C220 109 220 150 268 150"/>
+          <path d="M170 155 C220 155 220 158 268 158"/><path d="M170 201 C220 201 220 165 268 165"/>
+        </g>
+        <rect x="272" y="98" width="146" height="112" rx="14" fill="#182945" stroke="#f5b544" stroke-width="2"/>
+        <text x="345" y="138" fill="#f5b544" font-size="15" font-weight="800" text-anchor="middle">ルータ</text>
+        <text x="345" y="160" fill="#9caac9" font-size="11" text-anchor="middle">振り分け役</text>
+        <text x="345" y="182" fill="#6f7f9f" font-size="10.5" text-anchor="middle">毎回 2 個を選ぶ</text>
+        <g stroke="#5c6f99" stroke-width="1.4" fill="none" marker-end="url(#ar)">
+          <path d="M420 120 C455 120 455 56 486 56"/><path d="M420 140 C455 140 455 96 486 96"/>
+          <path d="M420 160 C455 160 455 136 486 136"/><path d="M420 180 C455 180 455 176 486 176"/>
+          <path d="M420 196 C455 196 455 216 486 216"/><path d="M420 204 C455 204 455 256 486 256"/>
+        </g>
+        <text x="490" y="30" fill="#6f7f9f" font-size="12">expert（棒の長さ＝幅＝一度に扱える情報量）</text>
+        <g>
+          <rect x="490" y="44" width="70" height="22" rx="5" fill="url(#gExpert)" opacity=".85"/><text x="568" y="60" fill="#9caac9" font-size="11">幅 32</text>
+          <rect x="490" y="84" width="70" height="22" rx="5" fill="url(#gExpert)" opacity=".85"/><text x="568" y="100" fill="#9caac9" font-size="11">幅 32</text>
+          <rect x="490" y="124" width="130" height="22" rx="5" fill="url(#gExpert)" opacity=".85"/><text x="628" y="140" fill="#9caac9" font-size="11">幅 96</text>
+          <rect x="490" y="164" width="130" height="22" rx="5" fill="url(#gExpert)" opacity=".85"/><text x="628" y="180" fill="#9caac9" font-size="11">幅 96</text>
+          <rect x="490" y="204" width="195" height="22" rx="5" fill="url(#gExpert)" opacity=".85"/><text x="693" y="220" fill="#9caac9" font-size="11">幅 160</text>
+          <rect x="490" y="244" width="265" height="22" rx="5" fill="url(#gExpert)" opacity=".85"/><text x="763" y="260" fill="#9caac9" font-size="11">幅 224</text>
+        </g>
+        <text x="490" y="296" fill="#6f7f9f" font-size="11">小さい専門医  ←→  大きい専門医（8 個）</text>
+        <rect x="18" y="248" width="150" height="46" rx="10" fill="#132b2e" stroke="#4fd1c5"/>
+        <text x="93" y="277" fill="#4fd1c5" font-size="13" font-weight="700" text-anchor="middle">出力（次の文字）</text>
+      </svg>
+      <figcaption>模式図です。実験で使った幅ベクトルは (32, 32, 96, 96, 160, 160, 224, 224)。ルータは top-2（毎回 2 個を選ぶ）です。</figcaption>
+    </figure>
+  </div>
+
+  <div class="takeaway"><b>確かめたかった直感：</b>「難しい文字には大きい専門医、簡単な文字には小さい専門医を割り当てれば、同じ精度で計算が減るはず」——これがこのプロジェクトの出発点でした。</div>
+</section>
+
+<!-- ============ 02 ============ -->
+<section id="s2">
+  <div class="sec-head"><div class="sec-no">02</div><div>
+    <h2>「どこに厚くするか」で、結果は真逆になった</h2>
+    <p class="sec-sub">計算を配り直す方向には、二つの軸があります。片方は効き、片方は効きませんでした。</p>
+  </div></div>
+
+  <div class="grid g2">
+    <div class="card">
+      <span class="tag gr">効いた</span>
+      <h3>トークン方向：文章の中で「難しい語」に厚くする</h3>
+      <figure>
+        <svg viewBox="0 0 420 190" role="img" aria-label="文章中の語ごとに計算量が変わる模式図">
+          <g font-size="11" fill="#9caac9">
+            <text x="14" y="26">むず</text><text x="79" y="26">かしい</text><text x="154" y="26">語</text>
+            <text x="204" y="26">ふつう</text><text x="279" y="26">記号</text><text x="334" y="26">…</text>
+          </g>
+          <g>
+            <rect x="10" y="40" width="48" height="90" rx="5" fill="#4fd1c5"/>
+            <rect x="66" y="40" width="60" height="104" rx="5" fill="#4fd1c5"/>
+            <rect x="134" y="40" width="42" height="76" rx="5" fill="#60a5fa"/>
+            <rect x="184" y="40" width="66" height="34" rx="5" fill="#60a5fa" opacity=".7"/>
+            <rect x="258" y="40" width="42" height="20" rx="5" fill="#60a5fa" opacity=".5"/>
+            <rect x="308" y="40" width="60" height="58" rx="5" fill="#4fd1c5" opacity=".75"/>
+          </g>
+          <line x1="8" y1="140" x2="380" y2="140" stroke="#34446b"/>
+          <text x="10" y="168" fill="#86efac" font-size="13" font-weight="750">語ごとに差がつく → ΔCE 21.5 倍</text>
+        </svg>
+        <figcaption>難易度の差で計算の効き方が <span class="mono">21.5 倍</span>変わった（P3）。棒の高さは模式です。</figcaption>
+      </figure>
+      <p class="small muted">「どの文字に多く計算を回すか」という軸では、はっきり差が出ました。</p>
+    </div>
+
+    <div class="card">
+      <span class="tag ro">効かなかった</span>
+      <h3>層方向：ネットワークの「何段目」に厚くする</h3>
+      <figure>
+        <svg viewBox="0 0 420 190" role="img" aria-label="16段の層に計算を配り直しても得にならない模式図">
+          <g>
+            <rect x="24" y="30" width="372" height="14" rx="3" fill="#263353"/>
+            <rect x="24" y="50" width="372" height="14" rx="3" fill="#263353"/>
+            <rect x="24" y="70" width="372" height="14" rx="3" fill="#3a2b3e"/>
+            <rect x="24" y="90" width="372" height="14" rx="3" fill="#3a2b3e"/>
+            <rect x="24" y="110" width="372" height="14" rx="3" fill="#263353"/>
+            <rect x="24" y="130" width="372" height="14" rx="3" fill="#263353"/>
+            <rect x="24" y="150" width="372" height="14" rx="3" fill="#263353"/>
+          </g>
+          <text x="36" y="42" fill="#9caac9" font-size="10">層 0</text>
+          <text x="36" y="82" fill="#f4728b" font-size="10">層 4〜7 を厚くしてみる</text>
+          <text x="36" y="162" fill="#9caac9" font-size="10">層 15</text>
+          <text x="24" y="184" fill="#f4728b" font-size="12.5" font-weight="750">条件を満たす層群 0 / 12　（非対称性 1.66 &lt; 必要 3.44）</text>
+        </svg>
+        <figcaption>層を 4 群に分けて 12 通り試しても、得になる組は <span class="mono">0/12</span>（P24）。P3b の理論条件も満たしませんでした。</figcaption>
+      </figure>
+      <p class="small muted">「どの段に多く計算を回すか」という軸では、どんな割り振りも割に合いませんでした。</p>
+    </div>
+  </div>
+
+  <div class="takeaway"><b>このプロジェクトの中心命題：</b>不均一な配分は「文章の中（トークン方向）」では効くが、「ネットワークの深さ（層方向）」では効かない。ただし——<span style="color:var(--amber)">この中心命題そのものの直接検定は、まだ決着していません</span>（08 章へ）。</div>
+</section>
+
+<!-- ============ 03 ============ -->
+<section id="s3">
+  <div class="sec-head"><div class="sec-no">03</div><div>
+    <h2>なぜ「全部おなじ」が強いのか：三つの壁</h2>
+    <p class="sec-sub">賢く配り分けるより、均一に配る方が勝つ。これには構造的な理由が 3 つありました。</p>
+  </div></div>
+
+  <div class="grid g3">
+    <div class="card">
+      <span class="tag am">壁 1</span>
+      <h3>情報が「計算の後ろ」にしか無い</h3>
+      <figure>
+        <svg viewBox="0 0 280 120" role="img" aria-label="難しさを判定する情報が計算の末尾にしか現れない模式図">
+          <defs><marker id="arWall" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="#f4728b"/></marker></defs>
+          <line x1="20" y1="70" x2="260" y2="70" stroke="#34446b" stroke-width="2"/>
+          <circle cx="40" cy="70" r="15" fill="#1c2947" stroke="#f5b544" stroke-width="2"/>
+          <text x="40" y="75" text-anchor="middle" fill="#f5b544" font-size="14" font-weight="800">?</text>
+          <circle cx="240" cy="70" r="15" fill="#1c2947" stroke="#4fd1c5" stroke-width="2"/>
+          <text x="240" y="75" text-anchor="middle" fill="#4fd1c5" font-size="12" font-weight="800">判</text>
+          <path d="M232 46 C160 20 90 20 48 46" stroke="#f4728b" stroke-width="2" fill="none" stroke-dasharray="5 5" marker-end="url(#arWall)"/>
+          <text x="20" y="106" fill="#9caac9" font-size="11">入力時点</text>
+          <text x="212" y="106" fill="#9caac9" font-size="11">層 15 付近</text>
+        </svg>
+      </figure>
+      <p>「この語は難しいか」を判断できる情報は、計算がほぼ終わった後ろの層にしか現れません。<b>答えを知ってから「何分考えるか」を決める</b>ようなもので、手前では決めようがないのです。</p>
+      <p class="tiny">因果性の壁（P4）</p>
+    </div>
+    <div class="card">
+      <span class="tag ro">壁 2</span>
+      <h3>予測の外れが裾で雪だるまになる</h3>
+      <figure>
+        <svg viewBox="0 0 280 120" role="img" aria-label="小さな予測誤差が繰り返し部分で連鎖的に増える模式図">
+          <g fill="#263353">
+            <circle cx="30" cy="78" r="8"/><circle cx="62" cy="78" r="8"/><circle cx="94" cy="78" r="9"/>
+            <circle cx="126" cy="76" r="12"/><circle cx="162" cy="70" r="18"/><circle cx="208" cy="58" r="27"/>
+          </g>
+          <circle cx="208" cy="58" r="27" fill="none" stroke="#f4728b" stroke-width="2"/>
+          <text x="20" y="108" fill="#9caac9" font-size="11">同じような文が続くと…</text>
+          <text x="176" y="112" fill="#f4728b" font-size="11" font-weight="700">コスト集中</text>
+        </svg>
+      </figure>
+      <p>同じような表現が繰り返される領域で配分を誤ると、誤りが連鎖して一気に膨らみます。実測では <b>48 個の区間のうち 1 個がコストの 87%</b> を占めました。</p>
+      <p class="tiny">裾リスクの壁（P4 / P4b）</p>
+    </div>
+    <div class="card">
+      <span class="tag vi">壁 3</span>
+      <h3>混ぜると、平均より割高になる</h3>
+      <figure>
+        <svg viewBox="0 0 280 120" role="img" aria-label="凸な曲線の上で二点を混ぜると平均より高くつく模式図">
+          <path d="M25 30 C90 30 90 100 140 100 C190 100 190 30 255 30" fill="none" stroke="#a78bfa" stroke-width="2.5"/>
+          <line x1="70" y1="52" x2="210" y2="52" stroke="#6f7f9f" stroke-dasharray="5 5"/>
+          <circle cx="70" cy="52" r="6" fill="#60a5fa"/><circle cx="210" cy="52" r="6" fill="#60a5fa"/>
+          <circle cx="140" cy="100" r="6" fill="#f5b544"/>
+          <text x="30" y="20" fill="#9caac9" font-size="11">コスト</text>
+          <text x="150" y="90" fill="#f5b544" font-size="11">混合</text>
+        </svg>
+      </figure>
+      <p>計算コストは素直な比例ではなく「凸」なので、厚くしたり薄くしたりを混ぜると、均一に配ったときより合計が高くなります（<span class="mono">+0.0106 nats</span>）。</p>
+      <p class="tiny">Jensen ペナルティの壁（P4）</p>
+    </div>
+  </div>
+
+  <div class="takeaway"><b>結論：</b>均一配分が強いのは偶然ではなく、<b>この 3 つすべてを一度に回避できる唯一の単純な戦略</b>だったからです。「賢く配る」には、情報の位置・誤差の連鎖・凸性という 3 重のハードルがありました。</div>
+</section>
+
+<!-- ============ 04 ============ -->
+<section id="s4">
+  <div class="sec-head"><div class="sec-no">04</div><div>
+    <h2>予想が外れた：「難しさ」ではなく「コスト」が配分を決めていた</h2>
+    <p class="sec-sub">ここが、この研究でいちばん面白い反証です。</p>
+  </div></div>
+
+  <div class="grid g2">
+    <div class="card">
+      <span class="tag ro">予想は外れた</span>
+      <h3>難しい語は、むしろ小さい expert へ向かった</h3>
+      <p>「難しいpayload（中身の部分）ほど大きい専門医に送られる」はずでしたが、実際のトレースでは<span class="hl">逆</span>でした（Q1）。</p>
+      <p>では何が効いていたのか。答えは <span class="term" data-tip="p_pen：幅の大きい expert を使うと損失にペナルティを足す、訓練側のコスト設定。これを切ると配分が丸ごと反転します。">幅ペナルティ <span class="mono">p_pen</span></span>という「大きい専門医を使うと少し損」という訓練側の料金設定でした。</p>
+      <figure>
+        <div class="fig-title">図2　料金設定を切ると、配分が反転する（Q5）</div>
+        <svg viewBox="0 0 420 170" role="img" aria-label="p_penを切るとpayloadの幅が85.6から135.7へ増える棒グラフ">
+          <text x="10" y="24" fill="#9caac9" font-size="12">payload に割り当てられた幅</text>
+          <text x="10" y="58" fill="#9caac9" font-size="11">料金あり</text>
+          <rect x="105" y="44" width="171" height="22" rx="5" fill="#60a5fa"/>
+          <text x="286" y="60" fill="#eef3ff" font-size="12" font-weight="750">85.6</text>
+          <text x="10" y="100" fill="#f5b544" font-size="11">料金を切る</text>
+          <rect x="105" y="86" width="271" height="22" rx="5" fill="#f5b544"/>
+          <text x="386" y="102" fill="#0a0f1e" font-size="12" font-weight="850">135.7</text>
+          <line x1="105" y1="128" x2="390" y2="128" stroke="#34446b"/>
+          <text x="10" y="154" fill="#86efac" font-size="11.5" font-weight="700">なのに正解率は 0.9980 → 0.9984（ほぼ同じ）</text>
+        </svg>
+        <figcaption>配分の差 Δ は <span class="mono">+0.568 → −0.039</span> に反転。精度が同じなのに配分が逆なので、<b>「精度が高いから大きい専門医を選んだ」では説明できない</b>と分かります。</figcaption>
+      </figure>
+    </div>
+    <div class="card">
+      <span class="tag cy">だから</span>
+      <h3>「幅」は情報そのもの、「α」は音量</h3>
+      <p>太さ（幅）を変えると届く情報量が変わりますが、編集の強さ（α）を変えても音量が変わるだけでした。<span class="hl">幅が無いと、そもそもルータに情報が届かない</span>（Q12 / Q12b）。</p>
+      <p>payload 側の幅は、構造側の幅より <b>2.7 倍</b>効きました。逆に、活性化の「形」だけをいじっても、置く場所を変えても結果はほぼ同じでした（A4 / A7）。</p>
+      <div class="callout"><b>ルータの性質：</b>「質のちょっとした劣化」は全体で薄く吸収できますが、「容量（幅）の不足」は吸収できません。1 個の expert を劣化させても 8/8 すべてで品質変化を検出できませんでした。</div>
+      <p class="small muted" style="margin-top:14px">→ この「幅」「使用率」「位置」がじつは同じものの別名ではないか、という疑いが <b style="color:var(--violet)">Q-A</b> として残っています（09 章）。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 ============ -->
+<section id="s5">
+  <div class="sec-head"><div class="sec-no">05</div><div>
+    <h2>「半分にしたら半分速くなる」わけではなかった</h2>
+    <p class="sec-sub">会計を見ると、効率化の直感が思わぬ場所で裏目に出ます。</p>
+  </div></div>
+
+  <div class="grid g2">
+    <div class="card">
+      <span class="tag bl">計算の内訳</span>
+      <h3>専門医を細くしても、全体の計算は 2 割しか減らない</h3>
+      <p>AI の計算は「専門医（FFN）」だけではありません。前後の文脈を読む <b>attention</b> がおよそ半分を占めます。だから expert の幅を半分にしても、全体では <span class="mono">18〜21%</span> しか減りませんでした。</p>
+      <div class="stack">
+        <div style="width:50%;background:#60a5fa">attention 約 50%</div>
+        <div style="width:50%;background:#4fd1c5">expert / FFN 約 50%</div>
+      </div>
+      <div class="legend"><span><i style="background:#60a5fa"></i>削れない部分</span><span><i style="background:#4fd1c5"></i>幅を削れる部分（この半分だけが対象）</span></div>
+      <p class="tiny mono" style="margin-top:14px">params ≈ 282,785 + 1,028·W　/　MACs ≈ 266,240 + 1,024·W_active</p>
+    </div>
+    <div class="card">
+      <span class="tag am">見かけの差</span>
+      <h3>「大きな模型が勝った」の実体は、パラメータ数だった</h3>
+      <p>知識量はおおよそ <b>1 個のパラメータあたり 1 bit</b> 程度（K6）。不均一さそのものが効いたのではなく、<b>単に数が多かった</b>ことが効いていました。</p>
+      <p>訓練を十分に長く回すと、dense（普通の模型）との差は <span class="mono">約 0.003</span> まで縮んで<span class="term" data-tip="n.s.（有意差なし）：この実験のばらつきに対して差が小さく、「差がある」とは言えない状態。ただし「差がゼロ」を意味するわけではありません。">n.s.</span>になりました（K1g / P13）。<b>「差の在庫」は訓練予算の産物だった</b>わけです。</p>
+      <div class="callout"><b>現実的な処方箋：</b>残った実務ルールは「前半の層だけ削れ」（f1）で、削れるのは総 FLOPs の <span class="mono">4.65%</span> 程度。さらに P19 では「FLOPs を 0.64 倍にしても、実際の所要時間は 0.847 倍にしかならない」と実測されています。<b>計算量 ≠ 速さ</b>です。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 ============ -->
+<section id="s6">
+  <div class="sec-head"><div class="sec-no">06</div><div>
+    <h2>同じ情報を「出力」で渡すか「重み」で渡すかで、桁が変わった</h2>
+    <p class="sec-sub">大きい模型の知識を小さい模型に移す（蒸留）実験です。</p>
+  </div></div>
+
+  <div class="card">
+    <span class="tag vi">情報の通り道</span>
+    <h3>3 つの渡し方を比べたら、効果は 22 倍違った</h3>
+    <p>先生（大きい模型）から生徒（小さい模型）へ同じ情報を渡すのに、3 つの経路を試しました。縦軸は「予測の外れ具合（<span class="term" data-tip="CE / nats：AI が次の文字をどれだけ外したかを表す数値。小さいほど良く、下に伸びるほど改善が大きいと考えます。">CE</span>）」の改善量で、<b>下へ長いほど良く効いた</b>ことを表します。</p>
+    <div style="margin:22px 0 8px">
+      <div class="barrow"><div>重みをコピー<br><span class="tiny">（切り出し初期化）</span></div><div class="track"><span class="fill" style="width:100%;background:linear-gradient(90deg,#4fd1c5,#60a5fa)"></span></div><div class="barval num mono">−1.7897</div></div>
+      <div class="barrow"><div>層の途中の出力<br><span class="tiny">（層出力 KD）</span></div><div class="track"><span class="fill" style="width:11.4%;background:#a78bfa"></span></div><div class="barval numV mono">−0.2048</div></div>
+      <div class="barrow"><div>最終的な出力<br><span class="tiny">（logits KD）</span></div><div class="track"><span class="fill" style="width:4.6%;min-width:5px;background:#f4728b"></span></div><div class="barval numR mono">−0.0819</div></div>
+    </div>
+    <div class="legend" style="margin-bottom:18px">
+      <span><i style="background:#4fd1c5"></i>重み／出力の比 ＝ 21.9 倍</span>
+      <span><i style="background:#a78bfa"></i>重み／層出力 ＝ 8.74 倍</span>
+      <span><i style="background:#f4728b"></i>層出力／最終出力 ＝ 2.50 倍</span>
+    </div>
+    <p>どれだけ重みや温度を調整しても、出力を真似させる方法には <b>約 0.08 nats の天井</b>がありました（PC4 / W5 / W5b）。信号の種類を変えれば効き方は 2.5 倍変わりますが、<b>桁は変わらない</b>のです。</p>
+    <div class="callout"><b>ところが同じ「重み」でも、訓練が終わった<i>後</i>に触ると逆の結果になります。</b>約 135 万個ある数値のうち、たった <b>215 個（0.016%）</b>を 1 つの expert で編集しただけで、文章を最後まで書き切る割合が <span class="mono">0.572 → 0.014</span> に崩壊しました（W1）。ルータは調整つまみではなく<b>増幅器</b>で、1 スカラのバイアス編集でも同じ崩壊が起きます（X2）。改善方向の編集を試しても単調に悪化し、「能力は足せない」ことが実測されました。</div>
+    <p class="small muted" style="margin-top:14px">→ 「訓練前に重みを渡すと効くのに、訓練後に重みを動かすと壊れる」のはなぜか。蒸留の章と編集の章を繋ぐ <b style="color:var(--violet)">Q-C</b> です（09 章）。</p>
+  </div>
+
+  <figure>
+    <div class="fig-title">図3　0.016% の編集が全体に効く（模式図）</div>
+    <svg viewBox="0 0 900 190" role="img" aria-label="多数のパラメータのうちごく少数を編集すると全体の完走率が崩れる模式図">
+      <defs>
+        <pattern id="cells" width="17" height="17" patternUnits="userSpaceOnUse">
+          <rect x="1" y="1" width="14" height="14" rx="2" fill="#1b2740" stroke="#273553" stroke-width="1"/>
+        </pattern>
+        <marker id="ar2" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#f4728b"/></marker>
+      </defs>
+      <rect x="20" y="24" width="510" height="136" fill="url(#cells)" rx="8"/>
+      <rect x="122" y="75" width="14" height="14" rx="2" fill="#f5b544" stroke="#f5b544"/>
+      <text x="20" y="180" fill="#6f7f9f" font-size="11.5">模式図：実際は約 1,346,877 個の数値のうち 215 個（0.016%）</text>
+      <line x1="548" y1="92" x2="632" y2="92" stroke="#f4728b" stroke-width="2.5" marker-end="url(#ar2)"/>
+      <rect x="646" y="34" width="234" height="116" rx="12" fill="#2a1726" stroke="#f4728b" stroke-width="1.5"/>
+      <text x="666" y="66" fill="#9caac9" font-size="12">文章を書き切る割合</text>
+      <text x="666" y="104" fill="#86efac" font-size="19" font-weight="800">0.572</text>
+      <text x="736" y="104" fill="#f4728b" font-size="17">→</text>
+      <text x="768" y="104" fill="#f4728b" font-size="23" font-weight="850">0.014</text>
+      <text x="666" y="132" fill="#6f7f9f" font-size="11">6 回中 6 回で同じ方向（Holm 0.0264）</text>
+    </svg>
+    <figcaption>「0.016%」は<b>個数</b>であって<b>変更の大きさ</b>ではありません（実際の摂動比は 0.12326）。局所なのに吸収されず全体に効く、という点がこの実験の肝です。</figcaption>
+  </figure>
+</section>
+
+<!-- ============ 07 ============ -->
+<section id="s7">
+  <div class="sec-head"><div class="sec-no">07</div><div>
+    <h2>「8 回試した結果」を信じると、結論が何度もひっくり返る</h2>
+    <p class="sec-sub">研究成果そのものより、一般の方にいちばん役に立つかもしれない章です。</p>
+  </div></div>
+
+  <div class="grid g2">
+    <div class="card">
+      <span class="tag am">点推定の揺れ</span>
+      <h3>試行回数を増やすと、差の符号も大きさも動いた</h3>
+      <figure>
+        <svg viewBox="0 0 430 220" role="img" aria-label="seed数を増やすと差の点推定が動く折れ線グラフ">
+          <line x1="44" y1="170" x2="410" y2="170" stroke="#34446b"/>
+          <line x1="44" y1="30" x2="44" y2="170" stroke="#34446b"/>
+          <text x="10" y="34" fill="#6f7f9f" font-size="10">差（大）</text>
+          <text x="24" y="184" fill="#6f7f9f" font-size="10">0</text>
+          <g stroke="#1e2a45" stroke-width="1"><line x1="44" y1="120" x2="410" y2="120"/><line x1="44" y1="70" x2="410" y2="70"/></g>
+          <polyline points="90,64 190,168 290,141 390,116" fill="none" stroke="#f5b544" stroke-width="2.5" stroke-dasharray="6 5"/>
+          <g fill="#f5b544"><circle cx="90" cy="64" r="6"/><circle cx="190" cy="168" r="6"/><circle cx="290" cy="141" r="6"/><circle cx="390" cy="116" r="6"/></g>
+          <g font-size="10.5" fill="#eef3ff" text-anchor="middle">
+            <text x="90" y="52">+0.1467</text><text x="190" y="188">+0.0059</text>
+            <text x="290" y="132">+0.0273</text><text x="390" y="106">+0.0562</text>
+          </g>
+          <g font-size="10" fill="#9caac9" text-anchor="middle">
+            <text x="90" y="204">8 seed</text><text x="190" y="204">8 seed</text><text x="290" y="204">24 seed</text><text x="390" y="204">36 seed</text>
+          </g>
+          <g font-size="9.5" fill="#6f7f9f" text-anchor="middle">
+            <text x="90" y="218">W2</text><text x="190" y="218">Y1</text><text x="290" y="218">Z1</text><text x="390" y="218">Z2</text>
+          </g>
+        </svg>
+        <figcaption>模式図（縦軸は点推定の相対位置）。同じ比較なのに、8 回で見えていた「優位 +0.1467」も「優位が消えた +0.0059」も、<b>同じ 8 個の試行の揺れ</b>でした（Z1）。</figcaption>
+      </figure>
+    </div>
+    <div class="card">
+      <span class="tag ro">二峰性</span>
+      <h3>差を運んでいたのは「学習が立ち上がらなかった試行」だけ</h3>
+      <figure>
+        <svg viewBox="0 0 430 220" role="img" aria-label="学習成功seedと床モードseedの二峰分布の模式図">
+          <line x1="24" y1="160" x2="412" y2="160" stroke="#34446b"/>
+          <text x="24" y="180" fill="#6f7f9f" font-size="10">差 なし</text><text x="360" y="180" fill="#6f7f9f" font-size="10">差 大</text>
+          <g fill="#4fd1c5" opacity=".9">
+            <circle cx="88" cy="152" r="4"/><circle cx="96" cy="140" r="4"/><circle cx="104" cy="150" r="4"/><circle cx="112" cy="134" r="4"/>
+            <circle cx="120" cy="146" r="4"/><circle cx="128" cy="128" r="4"/><circle cx="136" cy="148" r="4"/><circle cx="144" cy="138" r="4"/>
+            <circle cx="152" cy="152" r="4"/><circle cx="160" cy="132" r="4"/><circle cx="168" cy="144" r="4"/><circle cx="176" cy="126" r="4"/>
+            <circle cx="184" cy="150" r="4"/><circle cx="192" cy="140" r="4"/><circle cx="200" cy="130" r="4"/><circle cx="208" cy="146" r="4"/>
+            <circle cx="216" cy="138" r="4"/><circle cx="224" cy="152" r="4"/><circle cx="232" cy="134" r="4"/><circle cx="240" cy="144" r="4"/>
+            <circle cx="248" cy="150" r="4"/><circle cx="256" cy="140" r="4"/><circle cx="264" cy="132" r="4"/>
+          </g>
+          <g fill="#f4728b">
+            <circle cx="278" cy="120" r="4"/><circle cx="292" cy="104" r="4"/><circle cx="306" cy="112" r="4"/><circle cx="320" cy="92" r="4"/>
+            <circle cx="334" cy="106" r="4"/><circle cx="348" cy="84" r="4"/><circle cx="362" cy="98" r="4"/><circle cx="376" cy="76" r="4"/>
+            <circle cx="302" cy="128" r="4"/><circle cx="330" cy="124" r="4"/><circle cx="358" cy="116" r="4"/><circle cx="386" cy="108" r="4"/>
+            <circle cx="410" cy="44" r="6" stroke="#f5b544" stroke-width="2"/>
+          </g>
+          <text x="70" y="198" fill="#4fd1c5" font-size="11">学習できた 23 試行：差はほぼ 0（−0.004677）</text>
+          <text x="270" y="198" fill="#f4728b" font-size="11">床モード 13 試行：差のすべてを運ぶ</text>
+          <text x="352" y="36" fill="#f5b544" font-size="10">s37（例外的に大きい）</text>
+        </svg>
+        <figcaption>模式図。床モード（<span class="mono">iv &lt; 0.10</span>）は H で <b>13/36＝36.1%</b>、U で <b>3/36＝8.3%</b>。ばらつきは計画前提の <b>4.72 倍</b>に膨らみました（Z2）。</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="takeaway"><b>いちばん大事な読み方：</b>「効果がありませんでした」は「効果がゼロ」ではありません。この研究では必ず <span class="term" data-tip="MDE（最小検出可能効果）：その実験のばらつきと回数で、ようやく見分けられる最小の差。これより小さい差は「無い」のではなく「この装置では見えない」。">MDE</span> を添えて「<b>この回数・このばらつきでは検出できず</b>」と書きます。AI の性能比較ニュースを読むときも、同じ注意がそのまま使えます。</div>
+
+  <p class="callout">さらに厄介なのが <b>s37</b> という試行です。訓練の損失は十分下がっていたのに、評価側の数値だけが桁違いに壊れていました（1.285841、次点は 0.293361）。<b>「訓練が上手くいったか」だけを見るチェックでは捕捉できません</b>。 → この「床モード」の正体が <b style="color:var(--violet)">Q-B</b> です（09 章）。</p>
+</section>
+
+<!-- ============ 08 ============ -->
+<section id="s8">
+  <div class="sec-head"><div class="sec-no">08</div><div>
+    <h2>そして、中心命題そのものは「まだ決着していない」</h2>
+    <p class="sec-sub">4 回、正面から確かめようとしました。4 回とも「検出できず」でした。</p>
+  </div></div>
+
+  <div class="card">
+    <span class="tag am">未決着</span>
+    <h3>「不均一さそのものが効いているか」を 4 通りの対照で測った</h3>
+    <p>比べ方を変えながら 4 回挑戦しました。下の図で、<b>点</b>が「見かけの差」、<b>薄い帯</b>が「その実験でようやく見分けられる最小の差（MDE）」です。点が帯の中にあると「差がある」とは言えません。</p>
+    <figure>
+      <svg viewBox="0 0 860 250" role="img" aria-label="4回の直接検定の点推定と最小検出可能効果の模式図">
+        <line x1="430" y1="20" x2="430" y2="210" stroke="#6f7f9f" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <text x="430" y="234" fill="#9caac9" font-size="11" text-anchor="middle">差なし（0）</text>
+        <g font-size="12" fill="#cdd8f0">
+          <text x="10" y="58">P13d</text>
+          <text x="10" y="112">W2</text>
+          <text x="10" y="166">Y1（交互作用）</text>
+        </g>
+        <g>
+          <rect x="230" y="42" width="400" height="26" rx="6" fill="#1d2a48" stroke="#34446b"/>
+          <circle cx="436" cy="55" r="7" fill="#f5b544"/>
+          <text x="646" y="60" fill="#9caac9" font-size="11">+0.0119 / MDE 0.0911</text>
+          <rect x="140" y="96" width="580" height="26" rx="6" fill="#1d2a48" stroke="#34446b"/>
+          <circle cx="530" cy="109" r="7" fill="#f5b544"/>
+          <text x="734" y="114" fill="#9caac9" font-size="11">+0.1467</text>
+          <text x="140" y="140" fill="#6f7f9f" font-size="10">MDE 0.2374</text>
+          <rect x="250" y="150" width="360" height="26" rx="6" fill="#1d2a48" stroke="#34446b"/>
+          <circle cx="404" cy="163" r="7" fill="#f5b544"/>
+          <text x="626" y="168" fill="#9caac9" font-size="11">−0.0551 / MDE 0.1029</text>
+        </g>
+        <text x="10" y="212" fill="#f4728b" font-size="12" font-weight="750">描いた 3 本すべてが「差なし」を含み、4 回目（X1）も同じ結果 → 検出できず</text>
+      </svg>
+      <figcaption>模式図（帯の幅は MDE を模式的に表したもので、厳密な信頼区間ではありません）。4 回目の X1 も Holm 0.170 / MDE 0.2066 で n.s.。Y1 の本命は Holm 0.7380 でした。</figcaption>
+    </figure>
+    <div class="callout"><b>ここが新しい問い <span style="color:var(--violet)">Q-D</span> です。</b>「検出力（試行回数）が足りない」と片付けてきましたが、4 回は<b>比べ方そのものが毎回違います</b>（同じパラメータ数の均一幅／同じパラメータ数の普通の模型／計算量を揃えた 2×2／計算量を揃えた対角）。パラメータ数と計算量は同時に揃えられない以上、<b>先に決めるべきは回数ではなく「何をもって不均一さの寄与とするか」</b>ではないか——という疑いが残っています。</div>
+    <p class="small muted">現在の状態：<b>現役の実験は 0</b>。保留になっている中心命題の直接検定は未決着のままです。Z3 の設計・実装・スモークは完了していますが、本番の 120 走行はまだ起動していません。</p>
+  </div>
+</section>
+
+<!-- ============ 09 ============ -->
+<section id="s9">
+  <div class="sec-head"><div class="sec-no">09</div><div>
+    <h2>残る 6 つの問い：ここが解けると、全体が一気に繋がる</h2>
+    <p class="sec-sub">研究成果は 6 つの「島」に分かれています。いまは島どうしが「別系列」として切り離されています。</p>
+  </div></div>
+
+  <p>これまでの章で何度も出てきた「→ Q-?」。それらを<b>島と島を繋ぐ橋</b>として描き直したのが下の地図です。<span class="hl">点線の切れ目は、今まさに切れている接続</span>です。下のカードにカーソルを合わせる（またはクリックする）と、その問いが解けたときに繋がる縁が光ります。</p>
+
+  <div class="maptools">
+    <button class="btn primary" id="allbtn" type="button">全部つないで見る</button>
+    <button class="btn" id="resetbtn" type="button">元に戻す</button>
+    <span class="tiny">点線＝今は切れている縁　／　色付きの実線＝その問いが解けたときに繋がる縁</span>
+  </div>
+
+  <figure id="mapfigure">
+    <svg viewBox="0 0 900 560" id="map" role="img" aria-label="6つの研究の島と6つの未解決の問いが結ぶ縁の地図">
+      <circle cx="450" cy="280" r="216" fill="none" stroke="#1a2540" stroke-width="1" stroke-dasharray="3 7"/>
+
+      <!-- chords: broken by default, healed on hover -->
+      <g class="qgroup" data-q="QA" style="--c:#4fd1c5">
+        <path class="chord" d="M640 170 Q560 230 740 280"/>
+        <circle class="qdot" cx="625" cy="228" r="17"/><text class="qmark" x="625" y="228">?</text><text class="qname" x="625" y="228">Q-A</text>
+      </g>
+      <g class="qgroup" data-q="QB" style="--c:#f5b544">
+        <path class="chord" d="M260 390 Q400 300 260 170"/>
+        <circle class="qdot" cx="330" cy="290" r="17"/><text class="qmark" x="330" y="290">?</text><text class="qname" x="330" y="290">Q-B</text>
+      </g>
+      <g class="qgroup" data-q="QC" style="--c:#a78bfa">
+        <path class="chord" d="M740 280 Q700 350 640 390"/>
+        <circle class="qdot" cx="695" cy="343" r="17"/><text class="qmark" x="695" y="343">?</text><text class="qname" x="695" y="343">Q-C</text>
+      </g>
+      <g class="qgroup" data-q="QD" style="--c:#60a5fa">
+        <path class="chord" d="M260 170 Q480 200 740 280"/>
+        <circle class="qdot" cx="490" cy="213" r="17"/><text class="qmark" x="490" y="213">?</text><text class="qname" x="490" y="213">Q-D</text>
+      </g>
+      <g class="qgroup" data-q="QE" style="--c:#86efac">
+        <path class="chord" d="M260 170 Q200 240 160 280"/>
+        <circle class="qdot" cx="205" cy="233" r="17"/><text class="qmark" x="205" y="233">?</text><text class="qname" x="205" y="233">Q-E</text>
+      </g>
+      <g class="qgroup" data-q="QF" style="--c:#f4728b">
+        <path class="chord" d="M640 170 Q650 280 640 390"/>
+        <circle class="qdot" cx="645" cy="280" r="17"/><text class="qmark" x="645" y="280">?</text><text class="qname" x="645" y="280">Q-F</text>
+      </g>
+
+      <!-- islands -->
+      <g class="island" data-id="alloc" style="color:#60a5fa">
+        <rect x="185" y="141" width="150" height="58" rx="12" fill="#16233e" stroke="#60a5fa" stroke-width="1.5"/>
+        <text x="260" y="166" text-anchor="middle" fill="#eef3ff" font-size="14" font-weight="800">配分・理論</text>
+        <text x="260" y="184" text-anchor="middle" fill="#8fa2c6" font-size="10">P3 / P4 / P24 / Y1</text>
+      </g>
+      <g class="island" data-id="width" style="color:#4fd1c5">
+        <rect x="565" y="141" width="150" height="58" rx="12" fill="#16233e" stroke="#4fd1c5" stroke-width="1.5"/>
+        <text x="640" y="166" text-anchor="middle" fill="#eef3ff" font-size="14" font-weight="800">幅・活性</text>
+        <text x="640" y="184" text-anchor="middle" fill="#8fa2c6" font-size="10">Q 系 / A 系</text>
+      </g>
+      <g class="island" data-id="distill" style="color:#a78bfa">
+        <rect x="665" y="251" width="150" height="58" rx="12" fill="#16233e" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="740" y="276" text-anchor="middle" fill="#eef3ff" font-size="14" font-weight="800">蒸留・容量</text>
+        <text x="740" y="294" text-anchor="middle" fill="#8fa2c6" font-size="10">K / PC / W5</text>
+      </g>
+      <g class="island" data-id="edit" style="color:#f4728b">
+        <rect x="565" y="361" width="150" height="58" rx="12" fill="#16233e" stroke="#f4728b" stroke-width="1.5"/>
+        <text x="640" y="386" text-anchor="middle" fill="#eef3ff" font-size="14" font-weight="800">編集</text>
+        <text x="640" y="404" text-anchor="middle" fill="#8fa2c6" font-size="10">W1 / X1 / X2</text>
+      </g>
+      <g class="island" data-id="floor" style="color:#f5b544">
+        <rect x="185" y="361" width="150" height="58" rx="12" fill="#16233e" stroke="#f5b544" stroke-width="1.5"/>
+        <text x="260" y="386" text-anchor="middle" fill="#eef3ff" font-size="14" font-weight="800">検出力・床</text>
+        <text x="260" y="404" text-anchor="middle" fill="#8fa2c6" font-size="10">W2 / Z1 / Z2 / Z3</text>
+      </g>
+      <g class="island" data-id="data" style="color:#86efac">
+        <rect x="85" y="251" width="150" height="58" rx="12" fill="#16233e" stroke="#86efac" stroke-width="1.5"/>
+        <text x="160" y="276" text-anchor="middle" fill="#eef3ff" font-size="14" font-weight="800">データ・実性能</text>
+        <text x="160" y="294" text-anchor="middle" fill="#8fa2c6" font-size="10">Corpus / P19</text>
+      </g>
+
+      <text x="450" y="536" text-anchor="middle" fill="#6f7f9f" font-size="11.5">6 つの島 × 6 本の橋。橋が 1 本増えるごとに、別々だった否定結果が同じ話として読めるようになります</text>
+    </svg>
+    <figcaption>模式図です。橋の位置は「その問いが主に繋ぐ 2 つの島」を代表として示したもので、実際に影響する島はカード下部に列挙しました。</figcaption>
+  </figure>
+
+  <div class="grid g2" style="margin-top:18px">
+    <div class="card qcard" data-q="QA" data-islands="width,distill,edit,floor,alloc,data" style="--qc:#4fd1c5" tabindex="0">
+      <h3><span class="qid">Q-A</span>幅・使用率・位置は、同じものの別名か<span class="qpri">最上位</span></h3>
+      <p class="qlead">「3 つの温度計が、じつは同じ温度を測っていただけでは？」</p>
+      <p class="qmeta">幅が位置の代理だったり（r +0.452）、使用率と弾性がほぼ一致したり（r +0.990）します。<b>幅を固定して位置だけ動かす実験が 1 本も無い</b>ため、別変数かどうかが判別できていません。</p>
+      <p class="qmeta"><b>解けると：</b>「幅の経済」「容量」「ルータの吸収」「0.016% 編集」が 1 つの仕組みになり、中心命題で動かすべき「つまみ」も決まります。</p>
+      <div class="islands"><span>幅・活性</span><span>蒸留・容量</span><span>編集</span><span>検出力・床</span><span>配分</span><span>データ</span></div>
+    </div>
+
+    <div class="card qcard" data-q="QB" data-islands="floor,alloc,data,width,distill,edit" style="--qc:#f5b544" tabindex="0">
+      <h3><span class="qid">Q-B</span>「床モード」は現象か、測定器の故障か<span class="qpri">最上位・1 つだけなら</span></h3>
+      <p class="qlead">「学習が立ち上がらない試行」は、AI の性質？ それとも実験装置のクセ？</p>
+      <p class="qmeta">13/36 対 3/36 という差が、見かけの効果をすべて運んでいました。似た「未収束」が他の実験にも散らばっています（39 走行中 33、24/26、8/8…）。<b>Z3 は「率」だけを確認し、正体は測りません。</b></p>
+      <p class="qmeta"><b>解けると：</b>「効果なし」と書かれた多数の結果が、AI の結論か測定の限界かにはっきり振り分けられます。最少の追加で済む橋です。</p>
+      <div class="islands"><span>検出力・床</span><span>配分</span><span>データ</span><span>幅・活性</span><span>蒸留・容量</span><span>編集</span></div>
+    </div>
+
+    <div class="card qcard" data-q="QC" data-islands="distill,edit,width" style="--qc:#a78bfa" tabindex="0">
+      <h3><span class="qid">Q-C</span>訓練前の重みは効くのに、訓練後の重みは壊す<span class="qpri">唯一の橋</span></h3>
+      <p class="qlead">「同じ『重み』なのに、なぜ片方は −1.79、片方は −0.56 なのか」</p>
+      <p class="qmeta">渡すタイミング（訓練前の土台選び／訓練後の微調整）が違うことは指摘済みですが、<b>何が境界を決めているかは未同定</b>です。</p>
+      <p class="qmeta"><b>解けると：</b>蒸留の章と編集の章が初めて 1 本の線で繋がります。跨ぐ島は 3 つだけですが、<b>この 2 つを結ぶ縁はここしかありません</b>。</p>
+      <div class="islands"><span>蒸留・容量</span><span>編集</span><span>幅・活性</span></div>
+    </div>
+
+    <div class="card qcard" data-q="QD" data-islands="alloc,distill,width,floor,data" style="--qc:#60a5fa" tabindex="0">
+      <h3><span class="qid">Q-D</span>「不均一さの寄与」って、結局何を比べればいいの？</h3>
+      <p class="qlead">「回数を増やせばいい」のか、「比べ方を定義し直す」のか。</p>
+      <p class="qmeta">4 回の直接検定はすべて n.s. でしたが、<b>4 回とも対照の立て方が違います</b>。パラメータ数と計算量は同時に揃えられません。</p>
+      <p class="qmeta"><b>解けると：</b>中心命題が「未決着」から「検定できる問い」に変わります。他の 4 つの島の結果も同じ物差しに載ります。</p>
+      <div class="islands"><span>配分</span><span>蒸留・容量</span><span>幅・活性</span><span>検出力・床</span><span>データ</span></div>
+    </div>
+
+    <div class="card qcard" data-q="QE" data-islands="alloc,data,width,distill,floor" style="--qc:#86efac" tabindex="0">
+      <h3><span class="qid">Q-E</span>合成課題の「難しさ」は、実際の文章の何にあたる？</h3>
+      <p class="qlead">「実験用の文章では、難しさ＝位置になってしまっていないか」</p>
+      <p class="qmeta">使った課題では内容が位置と独立しておらず、実データでの 3 検定も未収束のまま FAIL でした。<b>「難しさで配分は決まらない」という反証の解釈を縛っています。</b></p>
+      <p class="qmeta"><b>解けると：</b>「トークン方向に効く」という中心命題と、3 つの壁、実用的な削り方が、実データ上の量に対応づきます。</p>
+      <div class="islands"><span>配分</span><span>データ・実性能</span><span>幅・活性</span><span>蒸留・容量</span><span>検出力・床</span></div>
+    </div>
+
+    <div class="card qcard" data-q="QF" data-islands="width,edit,distill,alloc" style="--qc:#f4728b" tabindex="0">
+      <h3><span class="qid">Q-F</span>ルータは、いつ吸収していつ増幅するの？</h3>
+      <p class="qlead">「1 個の劣化は無視できるのに、1 個の数値で全体が崩れるのはなぜ」</p>
+      <p class="qmeta">質の劣化は薄く吸収されますが、幅（容量）とルータのバイアスは吸収されません。<b>境界が「種類」なのか「大きさ」なのか</b>が未検証です（効果のある帯での比較が未実施）。</p>
+      <p class="qmeta"><b>解けると：</b>「吸収」「増幅」「蒸留でルーティングを教えられない」が 1 つの応答関数にまとまり、Q-A / Q-C と合流します。</p>
+      <div class="islands"><span>幅・活性</span><span>編集</span><span>蒸留・容量</span><span>配分</span></div>
+    </div>
+  </div>
+
+  <div class="takeaway"><b>この地図の要点：</b>新しい実験を 1 本足すだけでは、島は増えても接続は増えません。<b>複数の島が同じ問いを共有したとき</b>だけ橋が架かります。とくに Q-A と Q-B は 6 つの島すべてに触れるので、どちらかが解けると「バラバラだった否定結果」が一気にひとつの話として読めるようになります。</div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="s10">
+  <div class="sec-head"><div class="sec-no">10</div><div>
+    <h2>AI チャットを使う人が持ち帰れる、3 つのこと</h2>
+    <p class="sec-sub">この研究は「速くする方法」だけでなく、「性能の話の読み方」も教えてくれます。</p>
+  </div></div>
+
+  <div class="grid g3">
+    <div class="card">
+      <span class="tag cy">1</span>
+      <h3>効率化は「どれだけ削るか」より「情報がいつ手に入るか」で決まる</h3>
+      <p>「難しいところだけ頑張る」は魅力的ですが、難しさを判定する情報が計算の後ろにしか無ければ、手前で配分は決められません。AI が「考える量」を切り替える機能にも、同じ制約が潜んでいます。</p>
+    </div>
+    <div class="card">
+      <span class="tag am">2</span>
+      <h3>「効果がありませんでした」は「効果ゼロ」ではない</h3>
+      <p>試行回数とばらつきで決まる「見分けられる最小の差」があります。8 回で消えた差が 24 回で戻り、36 回でまた大きくなる、というのがこのプロジェクトの実例です。比較記事の数字は、回数とともに読むと安心です。</p>
+    </div>
+    <div class="card">
+      <span class="tag vi">3</span>
+      <h3>小さな変更が、思わぬ場所に効くことがある</h3>
+      <p>0.016% の編集で文章が最後まで書けなくなる一方、ちょっとした質の劣化は全体で吸収されます。「どこを触ったか」が「何個触ったか」より効く、という感覚は、AI の挙動が突然変わったときの見方にも役立ちます。</p>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top:22px"><b>いまの正直な到達点：</b>「不均一配分は文章の中では効き、層の深さでは効かない」という中心命題は、片側の証拠は揃っていますが、<b>直接検定は 4 回とも検出できず、未決着のまま</b>です。使える実務ルールは「前半だけ削れ」（総計算の 4.65%）程度。そして、その計算削減が実際の速さにどれだけ効くかも、まだ測り切れていません。</div>
+
+  <h3 style="margin:36px 0 14px">ことばの辞典</h3>
+  <div class="grid g2">
+    <details class="gl"><summary>トークン / expert / ルータ</summary><p>文章は「トークン」という小さな塊に分けて処理されます。expert は実際に計算する小さなネットワーク、ルータは「どの expert に渡すか」を決める振り分け役です。</p></details>
+    <details class="gl"><summary>幅（width）と α</summary><p>幅は expert の内側の太さで、一度に扱える情報量とパラメータ数を決めます。α は重み編集の強さ（振幅）です。この研究では「幅は情報、α は音量」と整理されました。</p></details>
+    <details class="gl"><summary>CE / nats</summary><p>AI が次の文字をどれだけ外したかを表す数値です。小さいほど良く、改善は「−0.20 nats」のように負の値で書かれます。</p></details>
+    <details class="gl"><summary>seed</summary><p>乱数の種。同じ設定でも seed を変えると学習結果が少し違います。何個の seed で試したかが、結果の信頼度を左右します。</p></details>
+    <details class="gl"><summary>n.s. / MDE / Holm</summary><p>n.s. は「この実験では差を検出できなかった」の意。MDE はその実験でようやく見分けられる最小の差、Holm は複数の検定を同時にしたときの補正です。「差がゼロ」を意味する言葉ではありません。</p></details>
+    <details class="gl"><summary>蒸留（KD） / 床モード</summary><p>蒸留は大きい模型の知識を小さい模型へ移すこと。床モードは、同じ設定なのに訓練が立ち上がらず、課題をほとんど達成できなかった試行のことです。</p></details>
+    <details class="gl"><summary>FLOPs / MACs / makespan</summary><p>FLOPs・MACs は計算量の目安、makespan は実際にかかった時間です。この研究では「計算量を 0.64 倍にしても時間は 0.847 倍にしかならない」と実測されました。</p></details>
+    <details class="gl"><summary>Q-A 〜 Q-F</summary><p>このページの 9 章で紹介した、未解決の 6 つの問いの番号です。個別の実験ではなく、複数の研究テーマを繋ぐ「橋」として整理されています。</p></details>
+  </div>
+</section>
+
+<footer>
+  <p><b>出典（すべてこのプロジェクト内の既存文書）</b>　数値は各一次報告書からの引用です。このページの作成にあたって<b>新規の測定は 1 本も行っておらず</b>、実験の状態（現役 0／保留 1 未決着）も変更していません。</p>
+  <ul>
+    <li>考察_未解決問いの接続地図_幅位置の同一性と床モードの正体が全系列の解釈を決める_20261109.md</li>
+    <li>考察_未解決課題マップ_データ側が律速である_20261104.md</li>
+    <li>考察_プロジェクト分割とメモリの寿命_20261105.md</li>
+    <li>考察_編集対象HMoEの適性は局所性でなく非吸収だった_20261107.md</li>
+    <li>考察_ルータの頑健性を品質に変換する_20261102.md</li>
+    <li>STATE.md（§3 と末尾の追記）</li>
+    <li>検証報告_P3 / P3b / P4 / P24 / P19（配分・3 壁・実性能）</li>
+    <li>検証報告_Q1 / Q5 / Q12b / A4 / A7（幅の経済）</li>
+    <li>検証報告_K6 / PC / PC4 / W5b / W1 / X2（容量・蒸留・編集）</li>
+    <li>検証報告_Y1 / Z1 / Z2、Z3課題設計書（検出力・床モード）</li>
+  </ul>
+  <p style="margin-top:18px">作成日：2026-11-09　／　対象：AI チャットサービスを普段使うレベルの読者　／　図はすべて模式図で、棒の長さや点の位置は説明のために簡略化しています。</p>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // scroll progress
+  var bar=document.getElementById('progress');
+  function upd(){
+    var h=document.documentElement, d=h.scrollHeight-h.clientHeight;
+    bar.style.width=(d>0?(h.scrollTop/d*100):0)+'%';
+  }
+  window.addEventListener('scroll',upd,{passive:true}); upd();
+
+  // nav active state
+  var links=[].slice.call(document.querySelectorAll('#navlinks a'));
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){a.classList.toggle('on',a.getAttribute('href')==='#'+e.target.id);});
+        }
+      });
+    },{rootMargin:'-25% 0px -65% 0px'});
+    [].slice.call(document.querySelectorAll('section')).forEach(function(s){io.observe(s);});
+  }
+
+  // connection map
+  var groups=[].slice.call(document.querySelectorAll('.qgroup'));
+  var islands=[].slice.call(document.querySelectorAll('.island'));
+  var cards=[].slice.call(document.querySelectorAll('.qcard'));
+  var pinned=null, allOn=false;
+  var allbtn=document.getElementById('allbtn'), resetbtn=document.getElementById('resetbtn');
+
+  function clearClasses(){
+    groups.forEach(function(g){g.classList.remove('active');});
+    cards.forEach(function(c){c.classList.remove('active');});
+    islands.forEach(function(i){i.classList.remove('lit','dim');});
+  }
+  function showAll(){
+    clearClasses();
+    groups.forEach(function(g){g.classList.add('active');});
+    cards.forEach(function(c){c.classList.add('active');});
+    islands.forEach(function(i){i.classList.add('lit');});
+  }
+  function showOne(q){
+    clearClasses();
+    if(!q) return;
+    var g=groups.filter(function(x){return x.dataset.q===q;})[0];
+    var c=cards.filter(function(x){return x.dataset.q===q;})[0];
+    if(g) g.classList.add('active');
+    if(c) c.classList.add('active');
+    var ids=(c&&c.dataset.islands?c.dataset.islands:'').split(',').filter(Boolean);
+    islands.forEach(function(i){
+      var hit=ids.indexOf(i.dataset.id)>=0;
+      i.classList.toggle('lit',hit); i.classList.toggle('dim',!hit);
+    });
+  }
+  function render(){
+    if(allOn){showAll();return;}
+    showOne(pinned);
+  }
+  cards.forEach(function(c){
+    c.addEventListener('mouseenter',function(){if(!allOn&&!pinned)showOne(c.dataset.q);});
+    c.addEventListener('mouseleave',function(){if(!allOn&&!pinned)showOne(null);});
+    c.addEventListener('focus',function(){if(!allOn&&!pinned)showOne(c.dataset.q);});
+    c.addEventListener('blur',function(){if(!allOn&&!pinned)showOne(null);});
+    c.addEventListener('click',function(){pinned=(pinned===c.dataset.q?null:c.dataset.q);allOn=false;allbtn.classList.remove('on');allbtn.textContent='全部つないで見る';render();});
+    c.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();c.click();}});
+  });
+  groups.forEach(function(g){
+    g.addEventListener('mouseenter',function(){if(!allOn&&!pinned)showOne(g.dataset.q);});
+    g.addEventListener('mouseleave',function(){if(!allOn&&!pinned)showOne(null);});
+    g.addEventListener('click',function(){pinned=(pinned===g.dataset.q?null:g.dataset.q);allOn=false;allbtn.classList.remove('on');allbtn.textContent='全部つないで見る';render();});
+  });
+  allbtn.addEventListener('click',function(){
+    allOn=!allOn; pinned=null;
+    allbtn.classList.toggle('on',allOn);
+    allbtn.textContent=allOn?'全部つないだ状態':'全部つないで見る';
+    render();
+  });
+  resetbtn.addEventListener('click',function(){
+    allOn=false; pinned=null;
+    allbtn.classList.remove('on'); allbtn.textContent='全部つないで見る';
+    clearClasses();
+  });
+  render();
+})();
+</script>
+</body>
+</html>
