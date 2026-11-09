@@ -1,1 +1,1 @@
-<a href="https://example.com">こちらをクリック</a>
+<a href="https://example.com">HMoE / visualized</a>
